@@ -3,12 +3,15 @@
 namespace App\Livewire;
 
 use App\Models\Device;
+use App\Models\DeviceType;
+use App\Models\Brand;
 use Illuminate\Support\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use PowerComponents\LivewirePowerGrid\Button;
 use PowerComponents\LivewirePowerGrid\Column;
 use PowerComponents\LivewirePowerGrid\Facades\Filter;
 use PowerComponents\LivewirePowerGrid\Facades\PowerGrid;
+use PowerComponents\LivewirePowerGrid\Facades\Rule;
 use PowerComponents\LivewirePowerGrid\PowerGridFields;
 use PowerComponents\LivewirePowerGrid\PowerGridComponent;
 
@@ -33,15 +36,16 @@ final class DeviceTable extends PowerGridComponent
     public function datasource(): Builder
     {
         return Device::query()
+          ->with(['device_type', 'brand'])
+        ;
+
+        /*
         ->join('device_types as newDevice_types', function ($device_types) 
         { 
           $device_types->on('devices.device_type_id', '=', 'newDevice_types.id');
         })
         ->select('devices.*', 'newDevice_types.name as device_type_name')
-        ->with('brand')
-        ;
-
-        
+*/        
 
         // ->join('brands as newBrands', function ($brands) 
         // { 
@@ -56,20 +60,27 @@ final class DeviceTable extends PowerGridComponent
     public function relationSearch(): array
     {
         return [];
+        /*return [
+        'device_type' => [ 'name', ],
+        'brand' => ['name',],          
+        ];*/
     }
 
     public function fields(): PowerGridFields
     {
         return PowerGrid::fields()
             // ->add('id')
-            ->add('device_type_name')
+            ->add('device_type_name', fn ($tab) => e($tab->device_type?->name))
+
+            // ->add('device_type_name')
             // ->add('device_type_id')            
             // ->add('brand_name')
             // ->add('brand_id')
-            ->add('brand_name', fn ($dev) => e($dev->brand->name))
+            ->add('brand_name', fn ($tab) => e($tab->brand->name))
             ->add('name')
             ->add('status')
-            ->add('created_at');
+            // ->add('created_at')
+            ->add('created_at_formatted', fn ($tab) => Carbon::parse($tab->created_at)->format('d.m.Y'));
     }
 
     public function columns(): array
@@ -78,15 +89,14 @@ final class DeviceTable extends PowerGridComponent
             // Column::make('Id', 'id'),
 
             // Column::make('Device type id', 'device_type_id'),
-            Column::make('Тип', 'device_type_name', 'newDevice_types.name')
-            ->sortable()
-            ->searchable(),
+            Column::make('Тип', 'device_type_name', 'newDevice_types.name'),
 
             Column::make('Бренд', 'brand_name'),
             // Column::make('Brand id', 'brand_id')
             // Column::make('Brand', 'brand_name', 'newBrands.name')
 
             Column::make('Назва', 'name')
+                ->bodyAttribute('!text-wrap')
                 ->sortable()
                 ->searchable(),
 
@@ -95,9 +105,7 @@ final class DeviceTable extends PowerGridComponent
                 ->searchable()
                 ->toggleable(),
 
-            Column::make('Created at', 'created_at')
-                ->sortable()
-                ->searchable(),
+            Column::make('Створено', 'created_at_formatted'),
 
             Column::action('Action')
         ];
@@ -107,7 +115,20 @@ final class DeviceTable extends PowerGridComponent
     {
         return [
 
-          Filter::datetimepicker('created_at'),
+          Filter::select('device_type_name', 'device_type_id')
+          ->dataSource(DeviceType::all())
+          ->optionLabel('name')
+          ->optionValue('id'),          
+
+          Filter::select('brand_name', 'brand_id')
+          ->dataSource(Brand::all())
+          ->optionLabel('name')
+          ->optionValue('id'),
+         
+
+
+          // Filter::inputText('brand')->operators(['contains']),
+
         ];
     }
 
@@ -128,6 +149,21 @@ final class DeviceTable extends PowerGridComponent
         ];
     }
 
+    public function actionRules($row): array
+    {
+        return [
+            Rule::checkbox()
+                ->when(fn ($device) => $device->status == false)
+                ->hide(),
+
+            Rule::rows()
+            ->when(fn ($dish) => $dish->status == false)
+            // --bs-table-striped-color:
+            // --bs-table-color: 
+            // ->setAttribute('class', 'text-red-500'),
+
+        ];
+    }
     /*
     public function actionRules($row): array
     {
@@ -139,4 +175,5 @@ final class DeviceTable extends PowerGridComponent
         ];
     }
     */
+    
 }
