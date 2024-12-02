@@ -43,8 +43,8 @@ class Brand extends Model
     $query->where('name', 'like', "%{$value}%");
   }
 
-  // public function devices(): HasMany
-  // {
-  //   return $this->hasMany(Device::class);
-  // }
+  public function devices(): HasMany
+  {
+    return $this->hasMany(Device::class);
+  }
 }

@@ -33,11 +33,21 @@ final class DeviceTable extends PowerGridComponent
     public function datasource(): Builder
     {
         return Device::query()
-        ->join('brands as newBrands', function ($brands) 
+        ->join('device_types as newDevice_types', function ($device_types) 
         { 
-          $brands->on('devices.brand_id', '=', 'newBrands.id');
+          $device_types->on('devices.device_type_id', '=', 'newDevice_types.id');
         })
-        ->select('devices.*', 'newBrands.name as brand_name');
+        ->select('devices.*', 'newDevice_types.name as device_type_name')
+        ->with('brand')
+        ;
+
+        
+
+        // ->join('brands as newBrands', function ($brands) 
+        // { 
+        //   $brands->on('devices.brand_id', '=', 'newBrands.id');
+        // })
+        // ->select('devices.*', 'newBrands.name as brand_name');
 
 
                // Column::make('DeviceType', 'device_type_name', 'newDevice_types.name'),
@@ -51,10 +61,12 @@ final class DeviceTable extends PowerGridComponent
     public function fields(): PowerGridFields
     {
         return PowerGrid::fields()
-            ->add('id')
-            // ->add('device_type_name')
-            ->add('device_type_id')            
-            ->add('brand_name')
+            // ->add('id')
+            ->add('device_type_name')
+            // ->add('device_type_id')            
+            // ->add('brand_name')
+            // ->add('brand_id')
+            ->add('brand_name', fn ($dev) => e($dev->brand->name))
             ->add('name')
             ->add('status')
             ->add('created_at');
@@ -63,21 +75,22 @@ final class DeviceTable extends PowerGridComponent
     public function columns(): array
     {
         return [
-            Column::make('Id', 'id'),
+            // Column::make('Id', 'id'),
 
-            Column::make('Device type id', 'device_type_id'),
-            // Column::make('DeviceType', 'device_type_name', 'newDevice_types.name'),
+            // Column::make('Device type id', 'device_type_id'),
+            Column::make('Тип', 'device_type_name', 'newDevice_types.name')
+            ->sortable()
+            ->searchable(),
 
-            // Column::make('Brand id', 'brand'),
-            Column::make('Brand', 'brand_name', 'newBrands.name')
+            Column::make('Бренд', 'brand_name'),
+            // Column::make('Brand id', 'brand_id')
+            // Column::make('Brand', 'brand_name', 'newBrands.name')
+
+            Column::make('Назва', 'name')
                 ->sortable()
                 ->searchable(),
 
-            Column::make('Name', 'name')
-                ->sortable()
-                ->searchable(),
-
-            Column::make('Status', 'status')
+            Column::make('Статус', 'status')
                 ->sortable()
                 ->searchable()
                 ->toggleable(),
